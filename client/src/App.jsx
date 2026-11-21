@@ -96,7 +96,18 @@ async function handleGenerateItinerary(event) {
       }),
     })
 
-    const data = await response.json()
+    const raw = await response.text()
+
+let data
+try {
+  data = JSON.parse(raw)
+} catch {
+  data = { itinerary: raw }
+}
+
+if (!response.ok) {
+  throw new Error(data.error || data.message || data.itinerary || "API request failed")
+}
 
     if (!response.ok) {
       throw new Error(data.details || data.error || 'Could not generate itinerary.')
