@@ -104,12 +104,7 @@ try {
 } catch {
   data = { itinerary: raw }
 }
-
 if (!response.ok) {
-  throw new Error(data.error || data.message || data.itinerary || "API request failed")
-}
-
-    if (!response.ok) {
       throw new Error(data.details || data.error || 'Could not generate itinerary.')
     }
 
