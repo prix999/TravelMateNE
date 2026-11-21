@@ -39,7 +39,14 @@ const handlePlanTrip = async (event) => {
       body: JSON.stringify(tripDetails),
     })
 
-    const data = await response.json()
+    const raw = await response.text()
+let data
+
+try {
+  data = JSON.parse(raw)
+} catch {
+  data = { itinerary: raw }
+}
 
     if (!response.ok) {
       throw new Error(data.details || data.error || 'Something went wrong.')
