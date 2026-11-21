@@ -83,7 +83,7 @@ async function handleGenerateItinerary(event) {
   setItinerary('')
 
   try {
-    const response = await fetch('/api/itinerary', {
+    const response = await fetch('https://travelmatene-api.onrender.com/api/itinerary', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
