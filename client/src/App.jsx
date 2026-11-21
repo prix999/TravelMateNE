@@ -9,6 +9,50 @@ import { destinations, states } from './data/destinations'
 const categories = ['All', 'Nature', 'Wildlife', 'Mountains', 'Adventure', 'Culture', 'Heritage']
 
 function App() {
+  const [itinerary, setItinerary] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [tripError, setTripError] = useState('')
+
+const handlePlanTrip = async (event) => {
+  event.preventDefault()
+  setLoading(true)
+  setTripError('')
+  setItinerary('')
+
+  const formData = new FormData(event.currentTarget)
+
+  const tripDetails = {
+    startingCity: formData.get('startingCity'),
+    destination: formData.get('destination'),
+    days: Number(formData.get('days')),
+    budget: formData.get('budget') + ' INR',
+    travellers: Number(formData.get('travellers')),
+    interests: formData.get('interests'),
+  }
+
+  try {
+    const response = await fetch('/api/itinerary', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(tripDetails),
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(data.details || data.error || 'Something went wrong.')
+    }
+
+    setItinerary(data.itinerary)
+  } catch (error) {
+    setTripError(error.message || 'Unable to generate your itinerary.')
+  } finally {
+    setLoading(false)
+  }
+}
+
   const [search, setSearch] = useState('')
   const [selectedState, setSelectedState] = useState('All States')
   const [selectedCategory, setSelectedCategory] = useState('All')
@@ -20,6 +64,44 @@ function App() {
       return []
     }
   })
+
+  
+async function handleGenerateItinerary(event) {
+  event.preventDefault()
+
+  const formData = new FormData(event.currentTarget)
+
+  setLoading(true)
+  setTripError('')
+  setItinerary('')
+
+  try {
+    const response = await fetch('/api/itinerary', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        startingCity: formData.get('startingCity'),
+        destination: formData.get('destination'),
+        days: Number(formData.get('days')),
+        budget: formData.get('budget'),
+        travellers: Number(formData.get('travellers')),
+        interests: formData.get('interests'),
+      }),
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(data.details || data.error || 'Could not generate itinerary.')
+    }
+
+    setItinerary(data.itinerary)
+  } catch (error) {
+    setTripError(error.message)
+  } finally {
+    setLoading(false)
+  }
+}
 
   const filteredDestinations = useMemo(() => {
     return destinations.filter((place) => {
@@ -267,19 +349,79 @@ function App() {
           </div>
         </section>
 
-        <section id="planner" className="px-6 py-24 text-center md:px-12">
-          <Mountain className="mx-auto mb-5 text-[#b8794b]" size={32} />
-          <p className="text-xs font-semibold uppercase tracking-widest text-[#a47a56]">
-            Your next adventure
-          </p>
-          <h2 className="mt-4 text-4xl font-semibold">Your journey starts here.</h2>
-          <p className="mx-auto mt-4 max-w-xl leading-7 text-[#61746a]">
-            Let AI help you turn your travel ideas into a journey worth remembering.
-          </p>
-          <button className="mt-7 rounded-full bg-[#183d32] px-8 py-4 text-sm font-medium text-white">
-            Build my itinerary <ArrowRight className="ml-2 inline" size={16} />
-          </button>
-        </section>
+        
+<section id="planner" className="px-6 py-20 bg-[#f0eee5] md:px-12">
+  <div className="max-w-3xl mx-auto">
+    <div className="text-center mb-10">
+      <Mountain className="mx-auto mb-4 text-[#b8794b]" size={36} />
+      <p className="text-xs font-semibold uppercase tracking-widest text-[#a47a56]">
+        Your next adventure
+      </p>
+      <h2 className="mt-3 text-4xl font-semibold">
+        Plan your Northeast journey
+      </h2>
+      <p className="mt-3 text-[#61746a]">
+        Tell us what you love. Let AI create a travel itinerary for you.
+      </p>
+    </div>
+
+    <form onSubmit={handleGenerateItinerary} className="bg-white rounded-3xl p-6 md:p-9 shadow-sm grid gap-5 md:grid-cols-2">
+      <label className="text-sm font-medium">
+        Starting city
+        <input name="startingCity" defaultValue="Guwahati" required className="mt-2 w-full border rounded-xl p-3" />
+      </label>
+
+      <label className="text-sm font-medium">
+        Destination
+        <select name="destination" required className="mt-2 w-full border rounded-xl p-3">
+          <option value="">Choose a state</option>
+          {states.filter(s => s !== 'All States').map(s => (
+            <option key={s} value={s}>{s}</option>
+          ))}
+        </select>
+      </label>
+
+      <label className="text-sm font-medium">
+        Trip duration
+        <select name="days" className="mt-2 w-full border rounded-xl p-3">
+          {[2, 3, 4, 5, 7].map(n => <option key={n} value={n}>{n} days</option>)}
+        </select>
+      </label>
+
+      <label className="text-sm font-medium">
+        Budget (total in INR)
+        <input name="budget" defaultValue="8000" required className="mt-2 w-full border rounded-xl p-3" />
+      </label>
+
+      <label className="text-sm font-medium">
+        Number of travellers
+        <input name="travellers" type="number" min="1" max="20" defaultValue="2" required className="mt-2 w-full border rounded-xl p-3" />
+      </label>
+
+      <label className="text-sm font-medium">
+        Your interests
+        <input name="interests" defaultValue="Nature, waterfalls, local food" className="mt-2 w-full border rounded-xl p-3" />
+      </label>
+
+      <button type="submit" disabled={loading} className="md:col-span-2 mt-3 rounded-full bg-[#183d32] text-white py-4 font-medium hover:bg-[#285747] disabled:opacity-60">
+        {loading ? 'Creating your itinerary...' : 'Build my itinerary →'}
+      </button>
+    </form>
+
+    {tripError && (
+      <p className="mt-5 rounded-xl bg-red-50 text-red-700 p-4">{tripError}</p>
+    )}
+
+    {itinerary && (
+      <div className="mt-8 bg-white rounded-3xl p-6 md:p-9">
+        <h3 className="text-2xl font-semibold mb-4">Your travel itinerary</h3>
+        <div className="whitespace-pre-wrap leading-7 text-[#385448]">{itinerary}</div>
+      </div>
+    )}
+  </div>
+</section>
+
+
       </main>
 
       <footer className="flex flex-col justify-between gap-3 border-t border-[#dfe3d9] px-6 py-8 text-sm text-[#61746a] md:flex-row md:px-12">
